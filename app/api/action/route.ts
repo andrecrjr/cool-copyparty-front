@@ -56,6 +56,31 @@ export async function GET(req: NextRequest) {
     return proxyJson(url)
   }
 
+  // New: direct file proxy with optional download or cache
+  if (op === "file") {
+    const wantCache = searchParams.get("cache") === "1"
+    const wantDownload = searchParams.get("download") === "1"
+
+    let targetUrl = `${serverUrl}${path}`
+    if (wantDownload) {
+      targetUrl += targetUrl.includes("?") ? "&dl" : "?dl"
+    }
+    if (wantCache) {
+      targetUrl += targetUrl.includes("?") ? "&cache" : "?cache"
+    }
+
+    const url = appendPwToUrl(targetUrl, pw)
+    const upstream = await fetch(url, { method: "GET" })
+    const res = new NextResponse(upstream.body, { status: upstream.status, headers: upstream.headers })
+    // Cache control: cache images (when cache=1), otherwise disable caching
+    if (wantCache) {
+      res.headers.set("Cache-Control", "public, max-age=604800, immutable")
+    } else {
+      res.headers.set("Cache-Control", "no-store, max-age=0")
+    }
+    return res
+  }
+
   // Fallback: just proxy GET to a path
   const url = appendPwToUrl(`${serverUrl}${path}`, pw)
   const upstream = await fetch(url, { method: "GET", cache: "no-store" })

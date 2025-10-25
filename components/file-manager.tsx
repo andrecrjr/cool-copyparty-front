@@ -23,6 +23,9 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [showUpload, setShowUpload] = useState(false)
   const [mkdirName, setMkdirName] = useState("")
+  const imageExts = new Set<string>([
+    "png","jpg","jpeg","gif","webp","bmp","svg","ico","avif","heic","heif","tif","tiff","jfif"
+  ])
 
   const hasWritePermission = data?.perms.includes("write") || false  // eslint-disable-line @typescript-eslint/no-unused-vars
   const hasDeletePermission = data?.perms.includes("delete") || false
@@ -77,30 +80,22 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   }
 
   const handleDownload = async (file: FileItem) => {
-    try {
-      const params = new URLSearchParams({ op: "ls", serverUrl, path: `${currentPath}${file.href}` })
-      params.set("_", Date.now().toString())
-      const resp = await fetch(`/api/action?${params.toString()}`, { cache: "no-store" })
-      if (!resp.ok) {
-        if (resp.status === 401) throw new Error("Authentication failed")
-        if (resp.status === 403) throw new Error("Access denied")
-        throw new Error("Failed to fetch file info")
-      }
-      const json = await resp.json()
-      console.log("File info", json)
-    } catch (err: unknown) {
-      const msg =
-        (err as {message?: string})?.message === "Authentication failed"
-          ? "Authentication failed. Please log in again."
-          : (err as {message?: string})?.message === "Access denied"
-            ? "Access denied. Your account lacks permissions."
-            : "Failed to fetch file info. Please try again."
-      setError(msg)
-      if ((err as {message?: string})?.message === "Authentication failed") {
-        onLogout()
-      }
-      console.error(err)
+    const path = `${currentPath}${file.href}`
+    if (imageExts.has(file.ext.toLowerCase())) {
+      const params = new URLSearchParams({ op: "file", serverUrl, path, cache: "1" })
+      const url = `/api/action?${params.toString()}`
+      window.open(url, "_blank", "noopener")
+      return
     }
+  
+    const params = new URLSearchParams({ op: "file", serverUrl, path, download: "1" })
+    const url = `/api/action?${params.toString()}`
+    const a = document.createElement("a")
+    a.href = url
+    // do not set a.download; rely on server Content-Disposition
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   const handleDelete = async (item: FileItem | DirItem) => {

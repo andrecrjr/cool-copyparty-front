@@ -122,3 +122,32 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Responsive utilities and fixes */
+@layer utilities {
+  .container {
+    @apply w-full max-w-screen-xl mx-auto;
+  }
+  .safe-px {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .safe-pt {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@layer components {
+  .stack-sm {
+    @apply flex flex-col gap-2;
+  }
+  .stack-md {
+    @apply flex flex-col gap-3;
+  }
+  .stack-lg {
+    @apply flex flex-col gap-4;
+  }
+}

@@ -4,9 +4,9 @@ import type React from "react"
 
 import { useRef, useState } from "react"
 import { Button } from "./ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from "./ui/card"
 import { Progress } from "./ui/progress"
-import { CheckCircleIcon, AlertCircleIcon, UploadIcon, XIcon, FileIcon } from "lucide-react"
+import { CheckCircleIcon, AlertCircleIcon, UploadIcon, XIcon, FileIcon, InfoIcon } from "lucide-react"
 
 interface UploadFile {
   file: File
@@ -27,8 +27,10 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const isDemo = serverUrl.startsWith("demo://")
+
   const handleFileSelect = (files: FileList | null) => {
-    if (!files) return
+    if (!files || isDemo) return
 
     const newFiles: UploadFile[] = Array.from(files).map((file) => ({
       file,
@@ -39,25 +41,25 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
     setUploadFiles((prev) => [...prev, ...newFiles])
   }
 
-  async function waitUntilListed(filename: string, timeoutMs = 20000): Promise<boolean> {
-    const started = Date.now()
-    while (Date.now() - started < timeoutMs) {
+  const waitUntilListed = async (filename: string): Promise<boolean> => {
+    // Poll the listing for a short time to confirm the uploaded file appears
+    const end = Date.now() + 5000
+    while (Date.now() < end) {
       try {
-        const params = new URLSearchParams({ op: "ls", serverUrl, path: currentPath, _: `${Date.now()}` })
+        const params = new URLSearchParams({ op: "list", serverUrl, path: currentPath })
+        params.set("_", Date.now().toString())
         const resp = await fetch(`/api/action?${params.toString()}`, { cache: "no-store" })
-        if (!resp.ok) {
-          await new Promise((r) => setTimeout(r, 800))
-          continue
+        if (resp.ok) {
+          const data = await resp.json()
+          const files: Array<{ href: string }> = data?.files || []
+          if (files.some((f) => decodeURIComponent(f.href).replace(/^\//, "") === filename)) {
+            return true
+          }
         }
-        const data = await resp.json()
-        const files: Array<{ href: string }> = data?.files || []
-        if (Array.isArray(files) && files.some((f) => f.href?.endsWith(filename))) {
-          return true
-        }
-      } catch {
-        // transient network or listing errors; retry
+      } catch (e) {
+        // ignore and keep trying
       }
-      await new Promise((r) => setTimeout(r, 800))
+      await new Promise((r) => setTimeout(r, 400))
     }
     return false
   }
@@ -141,6 +143,10 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
   }
 
   const handleUploadAll = async () => {
+    if (isDemo) {
+      alert("Demo mode: uploads are disabled.")
+      return
+    }
     const pendingFiles = uploadFiles
       .map((f, i) => ({ file: f, index: i }))
       .filter(({ file }) => file.status === "pending")
@@ -154,16 +160,27 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <Card className="w-full sm:max-w-2xl rounded-none sm:rounded-xl h-[85vh] sm:h-auto safe-px safe-pt safe-pb overflow-y-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UploadIcon className="h-5 w-5" /> Upload Files
           </CardTitle>
+          <CardAction>
+            <Button variant="ghost" size="icon" aria-label="Close upload" onClick={onClose}>
+              <XIcon className="h-4 w-4" />
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent>
+          {isDemo && (
+            <div className="mb-3 flex items-center gap-2 rounded-md bg-yellow-100 text-yellow-900 px-3 py-2 text-xs sm:text-sm border border-yellow-200">
+              <InfoIcon className="h-4 w-4" />
+              Demo mode: uploads are disabled.
+            </div>
+          )}
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center ${isDragging ? "border-primary" : "border-muted"}`}
+            className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center ${isDragging ? "border-primary" : "border-muted"} ${isDemo ? "opacity-60 pointer-events-none" : ""}`}
             onDragOver={(e) => {
               e.preventDefault()
               setIsDragging(true)
@@ -172,12 +189,13 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             onDrop={(e) => {
               e.preventDefault()
               setIsDragging(false)
+              if (isDemo) return
               handleFileSelect(e.dataTransfer.files)
             }}
           >
             <p className="text-sm text-muted-foreground">Drag and drop files here, or click to select</p>
-            <input type="file" multiple ref={fileInputRef} className="hidden" onChange={(e) => handleFileSelect(e.target.files)} />
-            <Button variant="secondary" className="mt-4" onClick={() => fileInputRef.current?.click()}>
+            <input type="file" multiple ref={fileInputRef} className="hidden" onChange={(e) => handleFileSelect(e.target.files)} disabled={isDemo} />
+            <Button variant="secondary" className="mt-4" onClick={() => fileInputRef.current?.click()} disabled={isDemo}>
               Choose Files
             </Button>
           </div>
@@ -189,7 +207,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <FileIcon className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-sm">{uf.file.name}</span>
+                      <span className="text-sm truncate max-w-[60vw] sm:max-w-none">{uf.file.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {uf.status === "success" && <CheckCircleIcon className="h-5 w-5 text-green-600" />}
@@ -206,7 +224,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
               ))}
 
               <div className="flex justify-end">
-                <Button onClick={handleUploadAll} className="gap-2">
+                <Button onClick={handleUploadAll} className="gap-2" disabled={isDemo}>
                   <UploadIcon className="h-4 w-4" /> Upload All
                 </Button>
               </div>

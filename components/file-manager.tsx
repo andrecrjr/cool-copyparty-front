@@ -12,9 +12,10 @@ import type { CopyPartyResponse, FileItem, DirItem } from "@/types/copyparty"
 interface FileManagerProps {
   serverUrl: string
   onLogout: () => void
+  initialData?: CopyPartyResponse
 }
 
-export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
+export function FileManager({ serverUrl, onLogout, initialData }: FileManagerProps) {
   const [currentPath, setCurrentPath] = useState("/")
   const [data, setData] = useState<CopyPartyResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -27,12 +28,45 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
     "png","jpg","jpeg","gif","webp","bmp","svg","ico","avif","heic","heif","tif","tiff","jfif"
   ])
 
-  const hasWritePermission = data?.perms.includes("write") || false  // eslint-disable-line @typescript-eslint/no-unused-vars
-  const hasDeletePermission = data?.perms.includes("delete") || false
+  const isDemo = serverUrl.startsWith("demo://")
+  const hasWritePermission = !isDemo && (data?.perms.includes("write") || false)
+  const hasDeletePermission = !isDemo && (data?.perms.includes("delete") || false)
 
   const fetchDirectory = async (path: string) => {
     setIsLoading(true)
     setError("")
+
+    if (isDemo) {
+      // Use provided initial data for demo mode; stay on root for simplicity
+      const demo = initialData ?? {
+        dirs: [],
+        files: [],
+        taglist: [],
+        srvinf: "demo",
+        acct: "demo",
+        perms: ["read"],
+        cfg: {
+          idx: true,
+          itag: false,
+          dnsort: true,
+          dhsortn: 0,
+          dsort: "name",
+          dcrop: "",
+          dth3x: "",
+          u2ts: "",
+          shr_who: "",
+          frand: false,
+          lifetime: 0,
+          unlist: "",
+          sb_lg: "",
+        },
+        logues: [],
+        readmes: [],
+      }
+      setData(demo)
+      setIsLoading(false)
+      return
+    }
 
     try {
       const params = new URLSearchParams({ op: "ls", serverUrl, path })
@@ -80,6 +114,10 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   }
 
   const handleDownload = async (file: FileItem) => {
+    if (isDemo) {
+      alert("Demo mode: downloads are disabled.")
+      return
+    }
     const path = `${currentPath}${file.href}`
     if (imageExts.has(file.ext.toLowerCase())) {
       const params = new URLSearchParams({ op: "file", serverUrl, path, cache: "1" })
@@ -99,6 +137,10 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   }
 
   const handleDelete = async (item: FileItem | DirItem) => {
+    if (isDemo) {
+      alert("Demo mode: delete is disabled.")
+      return
+    }
     if (!confirm(`Are you sure you want to delete ${item.href}?`)) {
       return
     }
@@ -126,6 +168,10 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   }
 
   const handleMkdir = async () => {
+    if (isDemo) {
+      alert("Demo mode: creating folders is disabled.")
+      return
+    }
     const name = mkdirName.trim()
     if (!name) return
 
@@ -167,27 +213,27 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+      <header className="border-b sticky top-0 bg-background/80 backdrop-blur safe-pt z-30">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
-                <FolderIcon className="h-6 w-6 text-primary" />
+                <FolderIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
-              <h1 className="text-xl font-semibold">Cool CopyParty</h1>
+              <h1 className="text-lg sm:text-xl font-semibold">Cool CopyParty</h1>
             </div>
-            <Button variant="default" onClick={() => setShowUpload(true)} 
-                  className="cursor-pointer rounded-full gap-2 w-14 h-14 fixed right-10 bottom-14">
-              <UploadIcon className="h-20 w-20" />
-            </Button>
-            <div className="flex items-center gap-3">
+            <Button variant="default" onClick={() => setShowUpload(true)}
+                  className="cursor-pointer rounded-full gap-2 w-12 h-12 sm:w-14 sm:h-14 fixed right-4 sm:right-10 bottom-4 sm:bottom-8 shadow-md">
+                <UploadIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              </Button>
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button variant="outline" onClick={handleRefresh} className="gap-2">
                 <RefreshCwIcon className="h-4 w-4" />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
               <Button variant="destructive" onClick={onLogout} className="gap-2">
                 <LogOutIcon className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -195,7 +241,7 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 safe-px">
         {/* Breadcrumbs and Actions */}
         <div className="mb-6 space-y-4">
           <Breadcrumbs path={currentPath} onNavigate={handleNavigate} />

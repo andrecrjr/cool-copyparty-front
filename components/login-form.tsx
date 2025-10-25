@@ -49,14 +49,14 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center safe-px safe-pt safe-pb p-3 sm:p-4">
       <Card className="w-full max-w-md border-border/50">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <FolderIcon className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-semibold">Cool CopyParty 🏆</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl font-semibold">Cool CopyParty 🏆</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground">
             Connect to your file server to manage files and folders
@@ -78,8 +78,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 className="bg-background"
               />
             </div>
-            <div className="space-y-2">
-            </div>
+            <div className="space-y-2"></div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
                 Password
@@ -94,7 +93,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               />
             </div>
             {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full h-10 sm:h-11" disabled={isLoading}>
               {isLoading ? "Connecting..." : "Connect"}
             </Button>
           </form>

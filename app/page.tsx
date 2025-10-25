@@ -42,31 +42,31 @@ export default async function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6">
-      <section className="max-w-3xl text-center space-y-6">
-        <h1 className="text-4xl font-bold">Copyparty – Self-hosted file sharing</h1>
-        <p className="text-lg text-muted-foreground">
+    <main className="min-h-[calc(100vh-0px)] flex flex-col items-center justify-center p-4 sm:p-6 safe-px">
+      <section className="w-full max-w-3xl text-center space-y-6">
+        <h1 className="text-3xl sm:text-4xl font-bold">Copyparty – Self-hosted file sharing</h1>
+        <p className="text-base sm:text-lg text-muted-foreground">
           A clean, simple front-end for your Copyparty server. Secure cookie auth, smooth
           uploads, browsing, thumbnails, and easy sharing.
         </p>
-        <ul className="text-sm text-muted-foreground list-disc list-inside text-left mx-auto max-w-2xl">
+        <ul className="text-sm text-muted-foreground list-disc list-inside text-left mx-auto w-full max-w-2xl space-y-1">
           <li>SEO-friendly: descriptive metadata, keywords, and clean HTML.</li>
           <li>Secure: httpOnly encrypted cookie, middleware validation.</li>
           <li>Fast: minimal layout, optimized client components.</li>
         </ul>
 
-        <div className="flex items-center justify-center gap-4 pt-2">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2">
           <Link
             href="/app"
-            className="inline-flex items-center rounded-md bg-black text-white px-5 py-2 font-medium hover:opacity-90"
+            className="inline-flex items-center rounded-md bg-black text-white px-5 py-2 font-medium hover:opacity-90 w-full sm:w-auto justify-center"
           >
             Open App
           </Link>
           <a
-            href="hhttps://github.com/andrecrjr/cool-copyparty-front"
+            href="https://github.com/andrecrjr/cool-copyparty-front"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center rounded-md border px-5 py-2 font-medium hover:bg-muted"
+            className="inline-flex items-center rounded-md border px-5 py-2 font-medium hover:bg-muted w-full sm:w-auto justify-center"
           >
             Self Host
           </a>

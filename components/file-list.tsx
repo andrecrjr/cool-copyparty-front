@@ -112,7 +112,7 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
 
   if (viewMode === "grid") {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
         {dirs.map((dir) => (
           // Use a div for the clickable card to avoid nested <button> inside <Button>
           <div
@@ -126,10 +126,10 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
                 onNavigate(currentPath + dir.href)
               }
             }}
-            className="group relative flex flex-col items-center p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer"
+            className="group relative flex flex-col items-center p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer"
           >
-            <FolderIcon className="h-12 w-12 text-primary mb-2" />
-            <span className="text-sm text-center text-foreground line-clamp-2 break-all">
+            <FolderIcon className="h-10 w-10 sm:h-12 sm:w-12 text-primary mb-2" />
+            <span className="text-xs sm:text-sm text-center text-foreground line-clamp-2 break-all">
               {decodeURIComponent(dir.href.replace(/\/$/, ""))}
             </span>
             {onDelete && (
@@ -150,10 +150,10 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
         {files.map((file) => (
           <div
             key={file.href}
-            className="group relative flex flex-col items-center p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors"
+            className="group relative flex flex-col items-center p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors"
           >
             <div className="mb-2">{renderThumbOrIcon(file)}</div>
-            <span className="text-sm text-center text-foreground line-clamp-2 break-all mb-1">
+            <span className="text-xs sm:text-sm text-center text-foreground line-clamp-2 break-all mb-1">
               {decodeURIComponent(file.href)}
             </span>
             <span className="text-xs text-muted-foreground">{formatSize(file.sz)}</span>
@@ -179,14 +179,14 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
         <table className="w-full">
           <thead className="bg-muted/50 border-b border-border/50">
             <tr>
-              <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Name</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">
+              <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground">Name</th>
+              <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground hidden sm:table-cell">
                 Size
               </th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hidden md:table-cell">
+              <th className="text-left px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground hidden md:table-cell">
                 Modified
               </th>
-              <th className="text-right px-4 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+              <th className="text-right px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -196,17 +196,17 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
                 className="hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => onNavigate(currentPath + dir.href)}
               >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                <td className="px-3 sm:px-4 py-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <FolderIcon className="h-5 w-5 text-primary flex-shrink-0" />
                     <span className="text-sm text-foreground break-all">
                       {decodeURIComponent(dir.href.replace(/\/$/, ""))}
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(dir.sz)}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(dir.ts)}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(dir.sz)}</td>
+                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(dir.ts)}</td>
+                <td className="px-3 sm:px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
                     {onDelete && (
                       <Button
@@ -227,15 +227,15 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
             ))}
             {files.map((file) => (
               <tr key={file.href} className="hover:bg-accent/50 transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+                <td className="px-3 sm:px-4 py-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <div className="flex-shrink-0">{renderThumbOrIcon(file)}</div>
                     <span className="text-sm text-foreground break-all">{decodeURIComponent(file.href)}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(file.sz)}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(file.ts)}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(file.sz)}</td>
+                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(file.ts)}</td>
+                <td className="px-3 sm:px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDownload(file)}>
                       <DownloadIcon className="h-4 w-4" />

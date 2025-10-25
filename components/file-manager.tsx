@@ -262,6 +262,7 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
               onDownload={handleDownload}
               onDelete={hasDeletePermission ? handleDelete : undefined}
               currentPath={currentPath}
+              serverUrl={serverUrl}
             />
           )}
         </div>

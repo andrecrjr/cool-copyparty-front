@@ -22,15 +22,46 @@ interface FileListProps {
   onDownload: (file: FileItem) => void
   onDelete?: (item: FileItem | DirItem) => void
   currentPath: string
+  serverUrl: string
 }
 
-export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDelete, currentPath }: FileListProps) {
+function isImageExt(ext: string) {
+  const imageExts = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+    "svg",
+    "bmp",
+    "ico",
+    "avif",
+    "heic",
+    "heif",
+    "tif",
+    "tiff",
+    "jfif",
+  ]
+  return imageExts.includes(ext.toLowerCase())
+}
+
+function getThumbUrl(serverUrl: string, currentPath: string, file: FileItem) {
+  const pathWithTh = `${currentPath}${file.href}?th`
+  const params = new URLSearchParams({ op: "file", serverUrl, path: pathWithTh, cache: "1" })
+  return `/api/action?${params.toString()}`
+}
+
+export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDelete, currentPath, serverUrl }: FileListProps) {
   const formatSize = (bytes: number) => {
-    if (bytes === 0) return "0 B"
-    const k = 1024
-    const sizes = ["B", "KB", "MB", "GB", "TB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+    if (bytes < 1024) return `${bytes} B`
+    const units = ["KB", "MB", "GB", "TB"]
+    let size = bytes / 1024
+    let unitIndex = 0
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024
+      unitIndex++
+    }
+    return `${size.toFixed(1)} ${units[unitIndex]}`
   }
 
   const formatDate = (timestamp: number) => {
@@ -50,22 +81,52 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
     const archiveExts = ["zip", "rar", "7z", "tar", "gz"]
     const textExts = ["txt", "md", "json", "xml", "csv"]
 
-    if (imageExts.includes(ext.toLowerCase())) return <ImageIcon className="h-5 w-5" />
-    if (videoExts.includes(ext.toLowerCase())) return <FileVideoIcon className="h-5 w-5" />
-    if (audioExts.includes(ext.toLowerCase())) return <FileAudioIcon className="h-5 w-5" />
-    if (archiveExts.includes(ext.toLowerCase())) return <FileArchiveIcon className="h-5 w-5" />
-    if (textExts.includes(ext.toLowerCase())) return <FileTextIcon className="h-5 w-5" />
-    return <FileIcon className="h-5 w-5" />
+    if (imageExts.includes(ext.toLowerCase())) return <ImageIcon className="h-8 w-8" />
+    if (videoExts.includes(ext.toLowerCase())) return <FileVideoIcon className="h-8 w-8" />
+    if (audioExts.includes(ext.toLowerCase())) return <FileAudioIcon className="h-8 w-8" />
+    if (archiveExts.includes(ext.toLowerCase())) return <FileArchiveIcon className="h-8 w-8" />
+    if (textExts.includes(ext.toLowerCase())) return <FileTextIcon className="h-8 w-8" />
+    return <FileIcon className="h-8 w-8" />
+  }
+
+  const renderThumbOrIcon = (file: FileItem) => {
+    if (isImageExt(file.ext)) {
+      const url = getThumbUrl(serverUrl, currentPath, file)
+      return (
+        <img
+          src={url}
+          alt={`${decodeURIComponent(file.href)} thumbnail`}
+          width={64}
+          height={64}
+          loading="lazy"
+          className="h-16 w-16 object-contain rounded-md border border-border/50 bg-muted/20"
+        />
+      )
+    }
+    return (
+      <div className="h-16 w-16 flex items-center justify-center rounded-md border border-border/50 bg-muted/20">
+        <div className="text-muted-foreground">{getFileIcon(file.ext)}</div>
+      </div>
+    )
   }
 
   if (viewMode === "grid") {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {dirs.map((dir) => (
-          <button
+          // Use a div for the clickable card to avoid nested <button> inside <Button>
+          <div
             key={dir.href}
+            role="button"
+            tabIndex={0}
             onClick={() => onNavigate(currentPath + dir.href)}
-            className="group relative flex flex-col items-center p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onNavigate(currentPath + dir.href)
+              }
+            }}
+            className="group relative flex flex-col items-center p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer"
           >
             <FolderIcon className="h-12 w-12 text-primary mb-2" />
             <span className="text-sm text-center text-foreground line-clamp-2 break-all">
@@ -84,14 +145,14 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
                 <TrashIcon className="h-3 w-3" />
               </Button>
             )}
-          </button>
+          </div>
         ))}
         {files.map((file) => (
           <div
             key={file.href}
             className="group relative flex flex-col items-center p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors"
           >
-            <div className="text-muted-foreground mb-2">{getFileIcon(file.ext)}</div>
+            <div className="mb-2">{renderThumbOrIcon(file)}</div>
             <span className="text-sm text-center text-foreground line-clamp-2 break-all mb-1">
               {decodeURIComponent(file.href)}
             </span>
@@ -143,7 +204,7 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">—</td>
+                <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(dir.sz)}</td>
                 <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(dir.ts)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
@@ -168,7 +229,7 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
               <tr key={file.href} className="hover:bg-accent/50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="text-muted-foreground flex-shrink-0">{getFileIcon(file.ext)}</div>
+                    <div className="flex-shrink-0">{renderThumbOrIcon(file)}</div>
                     <span className="text-sm text-foreground break-all">{decodeURIComponent(file.href)}</span>
                   </div>
                 </td>

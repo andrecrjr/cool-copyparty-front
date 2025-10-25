@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { UploadIcon, XIcon, FileIcon, CheckCircleIcon, AlertCircleIcon } from "lucide-react"
+import { appendPwToUrl, getSessionPassword, isSessionPasswordValid } from "@/lib/auth"
 
 interface FileUploadProps {
   serverUrl: string
@@ -40,16 +41,28 @@ export function FileUpload({ serverUrl, currentPath, credentials, onUploadComple
     setUploadFiles((prev) => [...prev, ...newFiles])
   }
 
+  const ensureSessionPw = () => {
+    const pw = getSessionPassword()
+    return pw ?? credentials.password
+  }
+
   const uploadFile = async (uploadFile: UploadFile, index: number) => {
     const { file } = uploadFile
 
     setUploadFiles((prev) => prev.map((f, i) => (i === index ? { ...f, status: "uploading" as const } : f)))
 
     try {
+      if (!isSessionPasswordValid(credentials.password)) {
+        setUploadFiles((prev) =>
+          prev.map((f, i) => (i === index ? { ...f, status: "error" as const, error: "Session password mismatch" } : f)),
+        )
+        return
+      }
+
       const formData = new FormData()
       formData.append("f", file)
 
-      const uploadUrl = `${serverUrl}${currentPath}`
+      const uploadUrl = appendPwToUrl(`${serverUrl}${currentPath}`, ensureSessionPw())
 
       const xhr = new XMLHttpRequest()
 
@@ -95,7 +108,6 @@ export function FileUpload({ serverUrl, currentPath, credentials, onUploadComple
       })
 
       xhr.open("POST", uploadUrl)
-      xhr.setRequestHeader("Authorization", "Basic " + btoa(`${credentials.username}:${credentials.password}`))
       xhr.send(formData)
     } catch (error) {
       setUploadFiles((prev) =>

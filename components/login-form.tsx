@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderIcon } from "lucide-react"
+import { appendPwToUrl, saveSessionPassword } from "@/lib/auth"
 
 interface LoginFormProps {
   onLogin: (serverUrl: string, username: string, password: string) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [serverUrl, setServerUrl] = useState("http://localhost:3923")
+  const [serverUrl, setServerUrl] = useState("http://127.0.0.1:3923")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -26,20 +27,24 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true)
 
     try {
-      // Test connection to the server
-      const response = await fetch(`${serverUrl}/?j`, {
-        headers: {
-          Authorization: "Basic " + btoa(`${username}:${password}`),
-        },
-      })
+      // Normalize and enforce HTTPS for non-local servers
+      let baseUrl = serverUrl.trim()
+      // Test connection to the server using ls and pw
+      const testUrl = appendPwToUrl(`${baseUrl}?ls`, password)
+      const response = await fetch(testUrl)
 
       if (response.ok) {
-        onLogin(serverUrl, username, password)
+        saveSessionPassword(password)
+        onLogin(baseUrl, username, password)
+      } else if (response.status === 401) {
+        setError("Authentication failed. Please check your password.")
+      } else if (response.status === 403) {
+        setError("Access denied. Your account lacks permissions.")
       } else {
-        setError("Authentication failed. Please check your credentials.")
+        setError(`Failed to connect (status ${response.status}).`)
       }
     } catch (err) {
-      setError("Failed to connect to server. Please check the URL.")
+      setError("Invalid server URL or network issue. Ensure HTTPS is available.")
     } finally {
       setIsLoading(false)
     }
@@ -68,7 +73,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               <Input
                 id="serverUrl"
                 type="text"
-                placeholder="http://localhost:3923"
+                placeholder="https://192.168.1.23:3923"
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
                 required

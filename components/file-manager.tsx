@@ -8,6 +8,7 @@ import { FileList } from "@/components/file-list"
 import { FileUpload } from "@/components/file-upload"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import type { CopyPartyResponse, FileItem, DirItem } from "@/types/copyparty"
+import { appendPwToUrl, getSessionPassword, isSessionPasswordValid } from "@/lib/auth"
 
 interface FileManagerProps {
   serverUrl: string
@@ -24,29 +25,101 @@ export function FileManager({ serverUrl, credentials, onLogout }: FileManagerPro
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [showUpload, setShowUpload] = useState(false)
 
+  const ensureSessionPw = () => {
+    const pw = getSessionPassword()
+    return pw ?? credentials.password
+  }
+
   const fetchDirectory = async (path: string) => {
     setIsLoading(true)
     setError("")
 
     try {
-      const url = `${serverUrl}${path}?j`
-      const response = await fetch(url, {
-        headers: {
-          Authorization: "Basic " + btoa(`${credentials.username}:${credentials.password}`),
-        },
-      })
+      if (!isSessionPasswordValid(credentials.password)) {
+        setError("Session password mismatch. Please log in again.")
+        onLogout()
+        return
+      }
+
+      // Fetch JSON listing directly from ?ls
+      const lsUrl = appendPwToUrl(`${serverUrl}${path}?ls`, ensureSessionPw())
+      const response = await fetch(lsUrl)
 
       if (!response.ok) {
+        if (response.status === 401) throw new Error("Authentication failed")
+        if (response.status === 403) throw new Error("Access denied")
         throw new Error("Failed to fetch directory")
       }
 
       const jsonData: CopyPartyResponse = await response.json()
       setData(jsonData)
-    } catch (err) {
-      setError("Failed to load directory. Please try again.")
+    } catch (err: any) {
+      const msg =
+        err?.message === "Authentication failed"
+          ? "Authentication failed. Please check your password."
+          : err?.message === "Access denied"
+            ? "Access denied. Your account lacks permissions."
+            : "Failed to load directory. Please try again."
+      setError(msg)
       console.error(err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDownload = async (file: FileItem) => {
+    if (!isSessionPasswordValid(credentials.password)) {
+      setError("Session password mismatch. Please log in again.")
+      onLogout()
+      return
+    }
+
+    try {
+      const infoUrl = appendPwToUrl(`${serverUrl}${currentPath}${file.href}?ls`, ensureSessionPw())
+      const resp = await fetch(infoUrl)
+      if (!resp.ok) {
+        if (resp.status === 401) throw new Error("Authentication failed")
+        if (resp.status === 403) throw new Error("Access denied")
+        throw new Error("Failed to fetch file info")
+      }
+      const json = await resp.json()
+      console.log("File info", json)
+    } catch (err: any) {
+      const msg =
+        err?.message === "Authentication failed"
+          ? "Authentication failed. Please check your password."
+          : err?.message === "Access denied"
+            ? "Access denied. Your account lacks permissions."
+            : "Failed to fetch file info. Please try again."
+      setError(msg)
+      console.error(err)
+    }
+  }
+
+  const handleDelete = async (item: FileItem | DirItem) => {
+    if (!confirm(`Are you sure you want to delete ${item.href}?`)) {
+      return
+    }
+
+    try {
+      if (!isSessionPasswordValid(credentials.password)) {
+        setError("Session password mismatch. Please log in again.")
+        onLogout()
+        return
+      }
+      const deleteUrl = appendPwToUrl(`${serverUrl}${currentPath}${item.href}`, ensureSessionPw())
+      const response = await fetch(deleteUrl, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        handleRefresh()
+      } else {
+        alert("Failed to delete item")
+      }
+    } catch (err) {
+      alert("Failed to delete item")
+      console.error(err)
     }
   }
 
@@ -61,36 +134,6 @@ export function FileManager({ serverUrl, credentials, onLogout }: FileManagerPro
 
   const handleRefresh = () => {
     fetchDirectory(currentPath)
-  }
-
-  const handleDownload = (file: FileItem) => {
-    const downloadUrl = `${serverUrl}${currentPath}${file.href}`
-    window.open(downloadUrl, "_blank")
-  }
-
-  const handleDelete = async (item: FileItem | DirItem) => {
-    if (!confirm(`Are you sure you want to delete ${item.href}?`)) {
-      return
-    }
-
-    try {
-      const deleteUrl = `${serverUrl}${currentPath}${item.href}`
-      const response = await fetch(deleteUrl, {
-        method: "DELETE",
-        headers: {
-          Authorization: "Basic " + btoa(`${credentials.username}:${credentials.password}`),
-        },
-      })
-
-      if (response.ok) {
-        handleRefresh()
-      } else {
-        alert("Failed to delete item")
-      }
-    } catch (err) {
-      alert("Failed to delete item")
-      console.error(err)
-    }
   }
 
   const filteredFiles = data?.files.filter((file) => file.href.toLowerCase().includes(searchQuery.toLowerCase())) || []

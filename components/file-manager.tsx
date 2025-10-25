@@ -23,7 +23,7 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [showUpload, setShowUpload] = useState(false)
 
-  const hasWritePermission = data?.perms.includes("write") || false
+  const hasWritePermission = data?.perms.includes("write") || false  // eslint-disable-line @typescript-eslint/no-unused-vars
   const hasDeletePermission = data?.perms.includes("delete") || false
 
   const fetchDirectory = async (path: string) => {
@@ -42,15 +42,15 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
 
       const jsonData: CopyPartyResponse = await response.json()
       setData(jsonData)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.message === "Authentication failed"
+        (err as {message?: string})?.message === "Authentication failed"
           ? "Authentication failed. Please log in again."
-          : err?.message === "Access denied"
+          : (err as {message?: string})?.message === "Access denied"
             ? "Access denied. Your account lacks permissions."
             : "Failed to load directory. Please try again."
       setError(msg)
-      if (err?.message === "Authentication failed") {
+      if ((err as {message?: string})?.message === "Authentication failed") {
         onLogout()
       }
       console.error(err)
@@ -84,15 +84,15 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
       }
       const json = await resp.json()
       console.log("File info", json)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.message === "Authentication failed"
+        (err as {message?: string})?.message === "Authentication failed"
           ? "Authentication failed. Please log in again."
-          : err?.message === "Access denied"
+          : (err as {message?: string})?.message === "Access denied"
             ? "Access denied. Your account lacks permissions."
             : "Failed to fetch file info. Please try again."
       setError(msg)
-      if (err?.message === "Authentication failed") {
+      if ((err as {message?: string})?.message === "Authentication failed") {
         onLogout()
       }
       console.error(err)

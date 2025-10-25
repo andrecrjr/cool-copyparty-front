@@ -160,9 +160,9 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <Card className="w-full sm:max-w-2xl rounded-none sm:rounded-xl h-[85vh] sm:h-auto safe-px safe-pt safe-pb overflow-y-auto">
-        <CardHeader>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center safe-px safe-pt safe-pb p-3 sm:p-4">
+      <Card className="w-full sm:max-w-2xl rounded-none sm:rounded-xl h-[85vh] sm:h-auto overflow-y-auto py-4 sm:py-6">
+        <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2">
             <UploadIcon className="h-5 w-5" /> Upload Files
           </CardTitle>
@@ -172,7 +172,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           {isDemo && (
             <div className="mb-3 flex items-center gap-2 rounded-md bg-yellow-100 text-yellow-900 px-3 py-2 text-xs sm:text-sm border border-yellow-200">
               <InfoIcon className="h-4 w-4" />
@@ -180,7 +180,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             </div>
           )}
           <div
-            className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center ${isDragging ? "border-primary" : "border-muted"} ${isDemo ? "opacity-60 pointer-events-none" : ""}`}
+            className={`border-2 border-dashed rounded-lg p-4 sm:p-6 text-center ${isDragging ? "border-primary" : "border-muted"} ${isDemo ? "opacity-60 pointer-events-none" : ""}`}
             onDragOver={(e) => {
               e.preventDefault()
               setIsDragging(true)

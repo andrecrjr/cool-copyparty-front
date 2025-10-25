@@ -60,6 +60,7 @@ export function getServerUrl(): string | null {
 export function clearServerUrl() {
   try {
     localStorage.removeItem(SERVER_URL_KEY)
+    localStorage.removeItem("viewMode")
   } catch (_) {
     // ignore storage errors
   }

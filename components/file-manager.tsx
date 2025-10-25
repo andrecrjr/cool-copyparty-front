@@ -21,12 +21,17 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list")
+  const [viewMode, setViewMode] = useState<"grid" | "list">(localStorage.getItem("viewMode") as "grid" | "list" || "list")
   const [showUpload, setShowUpload] = useState(false)
   const [mkdirName, setMkdirName] = useState("")
   const imageExts = new Set<string>([
     "png","jpg","jpeg","gif","webp","bmp","svg","ico","avif","heic","heif","tif","tiff","jfif"
   ])
+
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode)
+    localStorage.setItem("viewMode", mode)
+  }
 
   const isDemo = serverUrl.startsWith("demo://")
   const hasWritePermission = !isDemo && (data?.perms.includes("write") || false)
@@ -261,7 +266,7 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
             <div className="flex items-center gap-2">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("grid")}
+                onClick={() => handleViewModeChange("grid")}
                 className="gap-2"
               >
                 <GridIcon className="h-4 w-4" />
@@ -269,7 +274,7 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
               </Button>
               <Button
                 variant={viewMode === "list" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("list")}
+                onClick={() => handleViewModeChange("list")}
                 className="gap-2"
               >
                 <ListIcon className="h-4 w-4" />

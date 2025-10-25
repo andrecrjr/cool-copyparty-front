@@ -7,7 +7,8 @@
     "build": "next build",
     "serve": "next start --port 3925",
     "lint": "eslint .",
-    "build-prd": "next build && next start --port 3925"
+    "build-prd": "next build && next start --port 3925",
+    "build-webpack": "next build --webpack && next start --port 3925"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

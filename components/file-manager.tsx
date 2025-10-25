@@ -176,11 +176,11 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
               </div>
               <h1 className="text-xl font-semibold">Cool CopyParty</h1>
             </div>
+            <Button variant="default" onClick={() => setShowUpload(true)} 
+                  className="cursor-pointer rounded-full gap-2 w-14 h-14 fixed right-10 bottom-14">
+              <UploadIcon className="h-20 w-20" />
+            </Button>
             <div className="flex items-center gap-3">
-              <Button variant="secondary" onClick={() => setShowUpload(true)} className="gap-2">
-                <UploadIcon className="h-4 w-4" />
-                Upload
-              </Button>
               <Button variant="outline" onClick={handleRefresh} className="gap-2">
                 <RefreshCwIcon className="h-4 w-4" />
                 Refresh

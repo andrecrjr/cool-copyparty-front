@@ -4,7 +4,6 @@ const OFFLINE_URL = "/offline";
 
 // List core assets to precache (can be extended)
 const PRECACHE_ASSETS = [
-  "/",
   "/manifest.json",
   "/favicon.ico",
 ];

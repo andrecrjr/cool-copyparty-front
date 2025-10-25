@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderIcon } from "lucide-react"
-import { login as cppLogin } from "@/lib/auth"
 
 interface LoginFormProps {
-  onLogin: (serverUrl: string) => void
+  onLogin: (serverUrl: string, username: string, password: string) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
@@ -27,10 +26,20 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true)
 
     try {
-      await cppLogin(serverUrl, username, password)
-      onLogin(serverUrl)
+      // Test connection to the server
+      const response = await fetch(`${serverUrl}/?j`, {
+        headers: {
+          Authorization: "Basic " + btoa(`${username}:${password}`),
+        },
+      })
+
+      if (response.ok) {
+        onLogin(serverUrl, username, password)
+      } else {
+        setError("Authentication failed. Please check your credentials.")
+      }
     } catch (err) {
-      setError("Authentication failed. Please check your credentials.")
+      setError("Failed to connect to server. Please check the URL.")
     } finally {
       setIsLoading(false)
     }

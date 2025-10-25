@@ -32,7 +32,9 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
 
     try {
       const params = new URLSearchParams({ op: "ls", serverUrl, path })
-      const response = await fetch(`/api/action?${params.toString()}`)
+      // cache-busting
+      params.set("_", Date.now().toString())
+      const response = await fetch(`/api/action?${params.toString()}`, { cache: "no-store" })
 
       if (!response.ok) {
         if (response.status === 401) throw new Error("Authentication failed")
@@ -76,7 +78,8 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   const handleDownload = async (file: FileItem) => {
     try {
       const params = new URLSearchParams({ op: "ls", serverUrl, path: `${currentPath}${file.href}` })
-      const resp = await fetch(`/api/action?${params.toString()}`)
+      params.set("_", Date.now().toString())
+      const resp = await fetch(`/api/action?${params.toString()}`, { cache: "no-store" })
       if (!resp.ok) {
         if (resp.status === 401) throw new Error("Authentication failed")
         if (resp.status === 403) throw new Error("Access denied")
@@ -106,8 +109,10 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
 
     try {
       const params = new URLSearchParams({ serverUrl, path: `${currentPath}${item.href}` })
+      params.set("_", Date.now().toString())
       const response = await fetch(`/api/action?${params.toString()}`, {
         method: "DELETE",
+        cache: "no-store",
       })
 
       if (response.ok) {

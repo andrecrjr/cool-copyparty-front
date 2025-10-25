@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server"
 import { encrypt, generateCookieExpiration, decrypt } from "@/lib/crypto"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 const COOKIE_NAME = "copyparty_auth"
 
@@ -22,14 +24,14 @@ async function proxyJson(url: string): Promise<Response> {
   const resp = await fetch(url, { method: "GET" })
   const contentType = resp.headers.get("content-type") || ""
   if (!resp.ok) {
-    return NextResponse.json({ error: resp.statusText }, { status: resp.status })
+    return NextResponse.json({ error: resp.statusText }, { status: resp.status, headers: { "Cache-Control": "no-store, max-age=0" } })
   }
   if (contentType.includes("application/json")) {
     const data = await resp.json()
-    return NextResponse.json(data, { status: 200 })
+    return NextResponse.json(data, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } })
   } else {
     const text = await resp.text()
-    return NextResponse.json({ data: text }, { status: 200 })
+    return NextResponse.json({ data: text }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } })
   }
 }
 
@@ -46,8 +48,8 @@ export async function GET(req: NextRequest) {
   const path = searchParams.get("path") || "/"
   const pw = getDecryptedPw(req)
 
-  if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400 })
-  if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
+  if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } })
 
   if (op === "ls") {
     const url = appendPwToUrl(`${serverUrl}${path}?ls`, pw)
@@ -56,8 +58,10 @@ export async function GET(req: NextRequest) {
 
   // Fallback: just proxy GET to a path
   const url = appendPwToUrl(`${serverUrl}${path}`, pw)
-  const resp = await fetch(url, { method: "GET" })
-  return new NextResponse(resp.body, { status: resp.status, headers: resp.headers })
+  const upstream = await fetch(url, { method: "GET", cache: "no-store" })
+  const res = new NextResponse(upstream.body, { status: upstream.status, headers: upstream.headers })
+  res.headers.set("Cache-Control", "no-store, max-age=0")
+  return res
 }
 
 export async function POST(req: NextRequest) {
@@ -71,7 +75,7 @@ export async function POST(req: NextRequest) {
     const password: string | undefined = body?.password
 
     if (!serverUrl || !password) {
-      return NextResponse.json({ error: "Missing serverUrl or password" }, { status: 400 })
+      return NextResponse.json({ error: "Missing serverUrl or password" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
     }
 
     const testUrl = appendPwToUrl(`${serverUrl}?ls`, password)
@@ -79,7 +83,7 @@ export async function POST(req: NextRequest) {
     if (!resp.ok) {
       const status = resp.status
       const msg = status === 401 ? "Authentication failed" : status === 403 ? "Access denied" : "Connection failed"
-      return NextResponse.json({ error: msg }, { status })
+      return NextResponse.json({ error: msg }, { status, headers: { "Cache-Control": "no-store, max-age=0" } })
     }
 
     const enc = encrypt(password)
@@ -93,6 +97,7 @@ export async function POST(req: NextRequest) {
       expires: generateCookieExpiration(8), // 8 hours session
       path: "/",
     })
+    res.headers.set("Cache-Control", "no-store, max-age=0")
     return res
   }
 
@@ -101,8 +106,8 @@ export async function POST(req: NextRequest) {
     const path = searchParams.get("path") || "/"
     const pw = getDecryptedPw(req)
 
-    if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400 })
-    if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
+    if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } })
 
     const formData = await req.formData()
 
@@ -113,14 +118,14 @@ export async function POST(req: NextRequest) {
     })
 
     if (!upstreamResp.ok) {
-      return NextResponse.json({ error: upstreamResp.statusText }, { status: upstreamResp.status })
+      return NextResponse.json({ error: upstreamResp.statusText }, { status: upstreamResp.status, headers: { "Cache-Control": "no-store, max-age=0" } })
     }
 
     const text = await upstreamResp.text()
-    return NextResponse.json({ ok: true, response: text }, { status: 200 })
+    return NextResponse.json({ ok: true, response: text }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } })
   }
 
-  return NextResponse.json({ error: "Unsupported POST operation" }, { status: 400 })
+  return NextResponse.json({ error: "Unsupported POST operation" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
 }
 
 export async function DELETE(req: NextRequest) {
@@ -138,6 +143,7 @@ export async function DELETE(req: NextRequest) {
       expires: new Date(0),
       path: "/",
     })
+    res.headers.set("Cache-Control", "no-store, max-age=0")
     return res
   }
 
@@ -145,15 +151,15 @@ export async function DELETE(req: NextRequest) {
   const path = searchParams.get("path") || "/"
   const pw = getDecryptedPw(req)
 
-  if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400 })
-  if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
+  if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } })
 
   const deleteUrl = appendPwToUrl(`${serverUrl}${path}`, pw)
   const upstreamResp = await fetch(deleteUrl, { method: "DELETE" })
 
   if (!upstreamResp.ok) {
-    return NextResponse.json({ error: upstreamResp.statusText }, { status: upstreamResp.status })
+    return NextResponse.json({ error: upstreamResp.statusText }, { status: upstreamResp.status, headers: { "Cache-Control": "no-store, max-age=0" } })
   }
 
-  return NextResponse.json({ ok: true }, { status: 200 })
+  return NextResponse.json({ ok: true }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } })
 }

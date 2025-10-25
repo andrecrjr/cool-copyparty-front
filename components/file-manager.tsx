@@ -22,7 +22,16 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<"grid" | "list">(localStorage.getItem("viewMode") as "grid" | "list" || "list")
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        return (localStorage.getItem("viewMode") as "grid" | "list") || "list"
+      } catch (e) {
+        return "list"
+      }
+    }
+    return "list"
+  })
   const [showUpload, setShowUpload] = useState(false)
   const [mkdirName, setMkdirName] = useState("")
   const imageExts = new Set<string>([

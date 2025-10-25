@@ -3,7 +3,7 @@ setup:
 	npm run build-prd
 
 run:
-  npm run build-prd
+  	npm run build-prd
 
 run-webpack:
-  npm run build-webpack
+  	npm run build-webpack

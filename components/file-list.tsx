@@ -25,8 +25,7 @@ interface FileListProps {
   serverUrl: string
 }
 
-function isImageExt(ext: string) {
-  const imageExts = [
+const imageExts = [
     "jpg",
     "jpeg",
     "png",
@@ -42,6 +41,8 @@ function isImageExt(ext: string) {
     "tiff",
     "jfif",
   ]
+
+function isImageExt(ext: string) {
   return imageExts.includes(ext.toLowerCase())
 }
 
@@ -75,13 +76,12 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
   }
 
   const getFileIcon = (ext: string) => {
-    const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "svg"]
     const videoExts = ["mp4", "webm", "mov", "avi", "mkv"]
     const audioExts = ["mp3", "wav", "ogg", "flac", "m4a"]
     const archiveExts = ["zip", "rar", "7z", "tar", "gz"]
     const textExts = ["txt", "md", "json", "xml", "csv"]
 
-    if (imageExts.includes(ext.toLowerCase())) return <ImageIcon className="h-8 w-8" />
+    if (isImageExt(ext)) return <ImageIcon className="h-8 w-8" />
     if (videoExts.includes(ext.toLowerCase())) return <FileVideoIcon className="h-8 w-8" />
     if (audioExts.includes(ext.toLowerCase())) return <FileAudioIcon className="h-8 w-8" />
     if (archiveExts.includes(ext.toLowerCase())) return <FileArchiveIcon className="h-8 w-8" />

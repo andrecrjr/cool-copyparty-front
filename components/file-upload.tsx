@@ -2,24 +2,24 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { UploadIcon, XIcon, FileIcon, CheckCircleIcon, AlertCircleIcon } from "lucide-react"
-
-interface FileUploadProps {
-  serverUrl: string
-  currentPath: string
-  onUploadComplete: () => void
-  onClose: () => void
-}
+import { useRef, useState } from "react"
+import { Button } from "./ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Progress } from "./ui/progress"
+import { CheckCircleIcon, AlertCircleIcon, UploadIcon, XIcon, FileIcon } from "lucide-react"
 
 interface UploadFile {
   file: File
   progress: number
   status: "pending" | "uploading" | "success" | "error"
   error?: string
+}
+
+interface FileUploadProps {
+  serverUrl: string
+  currentPath: string
+  onUploadComplete: () => void
+  onClose: () => void
 }
 
 export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }: FileUploadProps) {
@@ -39,7 +39,30 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
     setUploadFiles((prev) => [...prev, ...newFiles])
   }
 
-  const uploadFile = async (uploadFile: UploadFile, index: number) => {
+  async function waitUntilListed(filename: string, timeoutMs = 20000): Promise<boolean> {
+    const started = Date.now()
+    while (Date.now() - started < timeoutMs) {
+      try {
+        const params = new URLSearchParams({ op: "ls", serverUrl, path: currentPath, _: `${Date.now()}` })
+        const resp = await fetch(`/api/action?${params.toString()}`, { cache: "no-store" })
+        if (!resp.ok) {
+          await new Promise((r) => setTimeout(r, 800))
+          continue
+        }
+        const data = await resp.json()
+        const files: Array<{ href: string }> = data?.files || []
+        if (Array.isArray(files) && files.some((f) => f.href?.endsWith(filename))) {
+          return true
+        }
+      } catch {
+        // transient network or listing errors; retry
+      }
+      await new Promise((r) => setTimeout(r, 800))
+    }
+    return false
+  }
+
+  const uploadFile = async (uploadFile: UploadFile, index: number): Promise<void> => {
     const { file } = uploadFile
 
     setUploadFiles((prev) => prev.map((f, i) => (i === index ? { ...f, status: "uploading" as const } : f)))
@@ -50,51 +73,58 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
 
       const params = new URLSearchParams({ op: "upload", serverUrl, path: currentPath })
 
-      const xhr = new XMLHttpRequest()
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
 
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100)
-          setUploadFiles((prev) => prev.map((f, i) => (i === index ? { ...f, progress } : f)))
-        }
-      })
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100)
+            setUploadFiles((prev) => prev.map((f, i) => (i === index ? { ...f, progress } : f)))
+          }
+        })
 
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setUploadFiles((prev) =>
-            prev.map((f, i) => (i === index ? { ...f, status: "success" as const, progress: 100 } : f)),
-          )
-        } else {
+        xhr.addEventListener("load", async () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // Upload finished network-wise; wait until file appears in listing
+            const ok = await waitUntilListed(file.name)
+            setUploadFiles((prev) =>
+              prev.map((f, i) => (i === index ? { ...f, status: ok ? ("success" as const) : ("error" as const), progress: 100, error: ok ? undefined : "Uploaded but not listed yet" } : f)),
+            )
+            resolve()
+          } else {
+            setUploadFiles((prev) =>
+              prev.map((f, i) =>
+                i === index
+                  ? {
+                      ...f,
+                      status: "error" as const,
+                      error: `Upload failed: ${xhr.statusText}`,
+                    }
+                  : f,
+              ),
+            )
+            reject(new Error(xhr.statusText || "Upload failed"))
+          }
+        })
+
+        xhr.addEventListener("error", () => {
           setUploadFiles((prev) =>
             prev.map((f, i) =>
               i === index
                 ? {
                     ...f,
                     status: "error" as const,
-                    error: `Upload failed: ${xhr.statusText}`,
+                    error: "Network error occurred",
                   }
                 : f,
             ),
           )
-        }
-      })
+          reject(new Error("Network error"))
+        })
 
-      xhr.addEventListener("error", () => {
-        setUploadFiles((prev) =>
-          prev.map((f, i) =>
-            i === index
-              ? {
-                  ...f,
-                  status: "error" as const,
-                  error: "Network error occurred",
-                }
-              : f,
-          ),
-        )
+        xhr.open("POST", `/api/action?${params.toString()}`)
+        xhr.send(formData)
       })
-
-      xhr.open("POST", `/api/action?${params.toString()}`)
-      xhr.send(formData)
     } catch (error) {
       setUploadFiles((prev) =>
         prev.map((f, i) =>
@@ -119,10 +149,8 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
       await uploadFile(file, index)
     }
 
-    // Wait a bit then refresh
-    setTimeout(() => {
-      onUploadComplete()
-    }, 500)
+    // refresh after completing uploads and listing confirms
+    onUploadComplete()
   }
 
   return (

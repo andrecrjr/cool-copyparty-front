@@ -109,12 +109,17 @@ export async function POST(req: NextRequest) {
     if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
     if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } })
 
-    const formData = await req.formData()
-
+    // Stream the original multipart body directly to the upstream to avoid truncation
     const uploadUrl = appendPwToUrl(`${serverUrl}${path}`, pw)
+    const contentType = req.headers.get("content-type") || undefined
+
     const upstreamResp = await fetch(uploadUrl, {
       method: "POST",
-      body: formData,
+      headers: contentType ? { "content-type": contentType } : undefined,
+      body: req.body,
+      cache: "no-store",
+      // @ts-expect-error Node fetch requires duplex for streamed bodies
+      duplex: "half",
     })
 
     if (!upstreamResp.ok) {

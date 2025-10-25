@@ -12,7 +12,7 @@ export function middleware(req: NextRequest) {
 
   const op = searchParams.get("op")
   if (op === "login" || op === "logout") {
-    // Allow login/logout requests to proceed without cookie validation
+    // Allow login/logout and landing page access to proceed without cookie validation
     return NextResponse.next()
   }
 

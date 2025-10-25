@@ -50,4 +50,4 @@ A clean Next.js frontend for interacting with a CopyParty file server. Log in us
 - Deploy to your platform of choice (e.g., Vercel). Ensure `COOKIE_SECRET` is configured and your app is served over HTTPS.
 
 ## Acknowledgements
-- Powered by [CopyParty](https://github.com/9001/copyparty) and Next.js.
+- Powered by [CopyParty](https://github.com/9001/copyparty) and Next.js and me.

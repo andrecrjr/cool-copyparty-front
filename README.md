@@ -10,20 +10,53 @@ A clean Next.js frontend for interacting with a CopyParty file server. Log in us
 - Session restore via cookie and local storage of the `serverUrl`
 
 ## Requirements
-- Node.js 18+ and npm
+- Node.js 18+ and npm (or pnpm)
 - A running CopyParty server (for example `http://127.0.0.1:3923`)
-- Set a cookie encryption secret: add `COOKIE_SECRET=your-long-random-secret` to `.env`
+- Set a cookie encryption secret: add `COOKIE_SECRET=your-long-random-secret` to your environment
 
-
-## Quick Start
+## Quick Start (dev)
 - Install dependencies: `npm install`
 - Start dev server: `npm run dev`
-- Open the URL shown in the terminal (commonly `http://localhost:3000`)
+- Open the URL shown in the terminal (default `http://localhost:3925`)
 
 ## Configuration
 - `COOKIE_SECRET` (recommended) or `NEXT_PUBLIC_COOKIE_SECRET` encrypts the auth cookie using AES‑256‑GCM.
 - No username is required; CopyParty APIs authenticate with the password only.
 - The app persists only `serverUrl` in `localStorage`. The password is never stored in web storage.
+
+## Self-Hosting
+You can self-host in two ways: using a prebuilt ZIP from Releases (standalone build), or building locally.
+
+### Option A: Download ZIP from GitHub Releases (standalone)
+1. Download the latest `build-front.zip` from the project’s Releases page.
+    - `wget https://github.com/andrecrjr/copyparty-front/releases/0.0.1/download/build-front.zip` or latest one check the Releases page.
+    - Alternatively, build it yourself using the instructions below.
+2. Unzip it: `unzip build-front.zip` (this creates `build-front/`).
+3. Change into the standalone bundle: `cd build-front/.next/standalone`.
+4. Set environment variables (at minimum a strong cookie secret, and your desired port):
+   - macOS/Linux: `COOKIE_SECRET=your-long-random-secret PORT=3925 NODE_ENV=production node server.js`
+   - Windows (PowerShell): `$env:COOKIE_SECRET="your-long-random-secret"; $env:PORT="3925"; $env:NODE_ENV="production"; node server.js`
+5. Open `http://localhost:3925` and log in with your CopyParty server URL and password.
+
+Notes:
+- The ZIP includes `.next/standalone` with `server.js` and minimal node_modules, plus static assets under `.next/standalone/.next/static` and `public` so it runs without the full dev environment.
+- Behind a reverse proxy, ensure `x-forwarded-proto` is set to `https` to enable secure cookies.
+
+### Option B: Build it yourself
+1. Clone the repo and install deps:
+   - `git clone <your-repo-url>`
+   - `cd copyparty-front && npm install`
+2. Build production: `npm run build` (Next is configured with `output: 'standalone'`).
+3. Prepare the standalone bundle (assets copied into the standalone directory):
+   - `cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/`
+   - Or simply run: `make zip-deploy` (creates `build-front/` and `build-front.zip`).
+     Note: the `zip-deploy` Makefile target currently uses `pnpm`. If you use `npm`, either replace that line with `npm run build` or run the copy commands above manually.
+4. Start the standalone server:
+   - `cd .next/standalone`
+   - `COOKIE_SECRET=your-long-random-secret PORT=3925 NODE_ENV=production node server.js`
+5. Visit `http://localhost:3925`.
+
+Alternative start (non-standalone): `npm run serve` (uses `next start --port 3925`). Use this when running on a machine with the full Node environment available.
 
 ## Usage
 - On the login screen, enter your CopyParty server URL and password, then Connect.
@@ -41,13 +74,14 @@ A clean Next.js frontend for interacting with a CopyParty file server. Log in us
 
 ## Security Notes
 - Always set `COOKIE_SECRET` in production; the default dev fallback is insecure.
-- In production, cookies are `httpOnly`, `sameSite=lax`, and `secure` when served over HTTPS.
+- In production, cookies are `httpOnly`, `sameSite=lax`, and `secure` when served over HTTPS (or when `x-forwarded-proto=https`).
 - The browser never stores the password; it is encrypted server‑side and only forwarded to CopyParty during API requests.
 
 ## Build and Deploy
 - Production build: `npm run build`
-- Start: `npm start`
-- Deploy to your platform of choice (e.g., Vercel). Ensure `COOKIE_SECRET` is configured and your app is served over HTTPS.
+- Start (standalone): `COOKIE_SECRET=your-long-random-secret PORT=3925 node .next/standalone/server.js`
+- Start (Next server): `npm run serve`
+- Deploy to your platform of choice (e.g., a VM or container). Ensure `COOKIE_SECRET` is configured and your app is served over HTTPS.
 
 ## Acknowledgements
 - Powered by [CopyParty](https://github.com/9001/copyparty) and Next.js and me.

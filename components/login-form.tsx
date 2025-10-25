@@ -56,7 +56,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             <div className="p-2 rounded-lg bg-primary/10">
               <FolderIcon className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-semibold">CopyParty</CardTitle>
+            <CardTitle className="text-2xl font-semibold">Cool CopyParty 🏆</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground">
             Connect to your file server to manage files and folders

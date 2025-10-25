@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { FolderIcon, UploadIcon, LogOutIcon, SearchIcon, GridIcon, ListIcon, RefreshCwIcon } from "lucide-react"
+import { FolderIcon, UploadIcon, LogOutIcon, SearchIcon, GridIcon, ListIcon, RefreshCwIcon, FolderPlusIcon } from "lucide-react"
 import { FileList } from "@/components/file-list"
 import { FileUpload } from "@/components/file-upload"
 import { Breadcrumbs } from "@/components/breadcrumbs"
@@ -22,6 +22,7 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [showUpload, setShowUpload] = useState(false)
+  const [mkdirName, setMkdirName] = useState("")
 
   const hasWritePermission = data?.perms.includes("write") || false  // eslint-disable-line @typescript-eslint/no-unused-vars
   const hasDeletePermission = data?.perms.includes("delete") || false
@@ -129,6 +130,45 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
     }
   }
 
+  const handleMkdir = async () => {
+    const name = mkdirName.trim()
+    if (!name) return
+
+    try {
+      const params = new URLSearchParams({ op: "upload", serverUrl, path: currentPath })
+      const form = new FormData()
+      form.append("act", "mkdir")
+      form.append("name", name)
+
+      const response = await fetch(`/api/action?${params.toString()}`, {
+        method: "POST",
+        body: form,
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) throw new Error("Authentication failed")
+        if (response.status === 403) throw new Error("Access denied")
+        throw new Error("Failed to create directory")
+      }
+
+      setMkdirName("")
+      handleRefresh()
+    } catch (err: unknown) {
+      const msg =
+        (err as {message?: string})?.message === "Authentication failed"
+          ? "Authentication failed. Please log in again."
+          : (err as {message?: string})?.message === "Access denied"
+            ? "Access denied. Your account lacks permissions."
+            : "Failed to create directory. Please try again."
+      setError(msg)
+      if ((err as {message?: string})?.message === "Authentication failed") {
+        onLogout()
+      }
+      console.error(err)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -139,7 +179,7 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
               <div className="p-2 rounded-lg bg-primary/10">
                 <FolderIcon className="h-6 w-6 text-primary" />
               </div>
-              <h1 className="text-xl font-semibold">CopyParty</h1>
+              <h1 className="text-xl font-semibold">Cool CopyParty</h1>
             </div>
             <div className="flex items-center gap-3">
               <Button variant="secondary" onClick={() => setShowUpload(true)} className="gap-2">
@@ -194,6 +234,24 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
               </Button>
             </div>
           </div>
+
+          {hasWritePermission && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="New folder name"
+                  value={mkdirName}
+                  onChange={(e) => setMkdirName(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={handleMkdir} className="gap-2" disabled={!mkdirName.trim()}>
+                  <FolderPlusIcon className="h-4 w-4" />
+                  Create folder
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* File List */}

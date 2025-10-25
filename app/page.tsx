@@ -44,7 +44,7 @@ export default async function LandingPage() {
   return (
     <main className="min-h-[calc(100vh-0px)] flex flex-col items-center justify-center p-4 sm:p-6 safe-px">
       <section className="w-full max-w-3xl text-center space-y-6">
-        <h1 className="text-3xl sm:text-4xl font-bold">Copyparty – Self-hosted file sharing</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold">Cool Copyparty – Another new Front end for your copyparty server</h1>
         <p className="text-base sm:text-lg text-muted-foreground">
           A clean, simple front-end for your Copyparty server. Secure cookie auth, smooth
           uploads, browsing, thumbnails, and easy sharing.

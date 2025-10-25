@@ -200,7 +200,7 @@ export function FileManager({ serverUrl, onLogout }: FileManagerProps) {
               dirs={data.dirs.filter((d) => d.href.toLowerCase().includes(searchQuery.toLowerCase()))}
               files={data.files.filter((f) => f.href.toLowerCase().includes(searchQuery.toLowerCase()))}
               viewMode={viewMode}
-              onNavigate={(href) => handleNavigate(`${currentPath}${href}`)}
+              onNavigate={(href) => handleNavigate(href)}
               onDownload={handleDownload}
               onDelete={hasDeletePermission ? handleDelete : undefined}
               currentPath={currentPath}

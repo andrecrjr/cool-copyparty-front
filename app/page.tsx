@@ -4,13 +4,13 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
-  title: "Copyparty – Self-hosted file sharing",
+  title: "Cool Copyparty – Another new Front End Self-hosted file management",
   description:
-    "Cool Copyparty frontend: self-host your files, browse, upload, and share. Fast Next.js UI with secure cookie auth.",
+    "Cool Copyparty frontend: self-host your files, browse, upload locally. Fast Next.js UI with secure cookie auth.",
   openGraph: {
-    title: "Copyparty – Self-hosted file sharing",
+    title: "Cool Copyparty – Another new Front End Self-hosted file management",
     description:
-      "Self-host your files with Copyparty and a modern Next.js frontend. Browse, upload, share.",
+      "Self-host your files with Copyparty and a modern Next.js frontend.",
     url: "https://copyparty.example",
     siteName: "Cool Copyparty",
     images: [{ url: "/vercel.svg", width: 1200, height: 630 }],
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Copyparty – Self-hosted file sharing",
+    title: "Cool Copyparty – Another new Front End Self-hosted file management",
     description:
       "Self-host your files with Copyparty and a modern Next.js frontend. Browse, upload, share.",
     images: ["/vercel.svg"],
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "file server",
     "Next.js",
     "upload",
-    "file sharing",
+    "file management",
     "open source",
   ],
 }

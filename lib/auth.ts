@@ -37,3 +37,30 @@ export function isSessionPasswordValid(expected: string): boolean {
   if (sessionPw == null) return true
   return sessionPw === expected
 }
+
+// Server URL storage (localStorage) — unify duplicated keys
+export const SERVER_URL_KEY = "copyparty_server_url"
+
+export function saveServerUrl(url: string) {
+  try {
+    localStorage.setItem(SERVER_URL_KEY, url)
+  } catch (_) {
+    // ignore storage errors
+  }
+}
+
+export function getServerUrl(): string | null {
+  try {
+    return localStorage.getItem(SERVER_URL_KEY)
+  } catch (_) {
+    return null
+  }
+}
+
+export function clearServerUrl() {
+  try {
+    localStorage.removeItem(SERVER_URL_KEY)
+  } catch (_) {
+    // ignore storage errors
+  }
+}

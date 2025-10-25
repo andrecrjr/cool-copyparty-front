@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { FileManager } from "@/components/file-manager"
 import { LoginForm } from "@/components/login-form"
+import { getServerUrl, saveServerUrl, clearServerUrl } from "@/lib/auth"
 
 export default function Page() {
   const [serverUrl, setServerUrl] = useState<string>("")
@@ -11,7 +12,7 @@ export default function Page() {
   // Hydrate login state on initial load if cookie is still valid
   useEffect(() => {
     try {
-      const savedUrl = localStorage.getItem("copyparty_server_url")
+      const savedUrl = getServerUrl()
       if (!savedUrl) return
 
       const params = new URLSearchParams({ op: "ls", serverUrl: savedUrl, path: "/" })
@@ -22,7 +23,7 @@ export default function Page() {
             setIsLoggedIn(true)
           } else if (res.status === 401 || res.status === 403) {
             // Cookie invalid or expired
-            localStorage.removeItem("copyparty_server_url")
+            clearServerUrl()
             setIsLoggedIn(false)
             setServerUrl("")
           }
@@ -37,7 +38,7 @@ export default function Page() {
 
   const handleLogin = (url: string) => {
     try {
-      localStorage.setItem("copyparty_server_url", url)
+      saveServerUrl(url)
     } catch (_) {
       // ignore storage errors
     }
@@ -48,7 +49,7 @@ export default function Page() {
   const handleLogout = async () => {
     await fetch("/api/action?op=logout", { method: "DELETE", cache: "no-store" })
     try {
-      localStorage.removeItem("copyparty_server_url")
+      clearServerUrl()
     } catch (_) {
       // ignore storage errors
     }

@@ -8,15 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderIcon } from "lucide-react"
-import { appendPwToUrl, saveSessionPassword } from "@/lib/auth"
 
 interface LoginFormProps {
-  onLogin: (serverUrl: string, username: string, password: string) => void
+  onLogin: (serverUrl: string) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [serverUrl, setServerUrl] = useState("http://127.0.0.1:3923")
-  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -27,21 +25,21 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true)
 
     try {
-      // Normalize and enforce HTTPS for non-local servers
-      let baseUrl = serverUrl.trim()
-      // Test connection to the server using ls and pw
-      const testUrl = appendPwToUrl(`${baseUrl}?ls`, password)
-      const response = await fetch(testUrl)
+      const resp = await fetch("/api/action?op=login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serverUrl: serverUrl.trim(), password }),
+      })
 
-      if (response.ok) {
-        saveSessionPassword(password)
-        onLogin(baseUrl, username, password)
-      } else if (response.status === 401) {
+      if (resp.ok) {
+        onLogin(serverUrl.trim())
+      } else if (resp.status === 401) {
         setError("Authentication failed. Please check your password.")
-      } else if (response.status === 403) {
+      } else if (resp.status === 403) {
         setError("Access denied. Your account lacks permissions.")
       } else {
-        setError(`Failed to connect (status ${response.status}).`)
+        const data = await resp.json().catch(() => null)
+        setError(data?.error || `Failed to connect (status ${resp.status}).`)
       }
     } catch (err) {
       setError("Invalid server URL or network issue. Ensure HTTPS is available.")
@@ -81,18 +79,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium">
-                Username
-              </Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="bg-background"
-              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">

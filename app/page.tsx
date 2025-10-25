@@ -7,23 +7,26 @@ import { FileManager } from "@/components/file-manager"
 export default function Page() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [serverUrl, setServerUrl] = useState("")
-  const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null)
 
-  const handleLogin = (url: string, username: string, password: string) => {
+
+
+  const handleLogin = (url: string) => {
     setServerUrl(url)
-    setCredentials({ username, password })
     setIsAuthenticated(true)
   }
 
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    setServerUrl("")
-    setCredentials(null)
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/action?op=logout", { method: "DELETE" })
+    } finally {
+      setIsAuthenticated(false)
+      setServerUrl("")
+    }
   }
 
   if (!isAuthenticated) {
     return <LoginForm onLogin={handleLogin} />
   }
 
-  return <FileManager serverUrl={serverUrl} credentials={credentials!} onLogout={handleLogout} />
+  return <FileManager serverUrl={serverUrl} onLogout={handleLogout} />
 }

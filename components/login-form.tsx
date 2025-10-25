@@ -71,7 +71,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               <Input
                 id="serverUrl"
                 type="text"
-                placeholder="https://192.168.1.23:3923"
+                placeholder="https://127.0.0.1:3923"
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
                 required
@@ -90,7 +90,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
                 className="bg-background"
               />
             </div>

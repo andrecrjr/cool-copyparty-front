@@ -76,7 +76,7 @@ export default function AppPage() {
       taglist: [],
       srvinf: "demo",
       acct: "demo",
-      perms: ["read"],
+      perms: ["read", "write", "delete"],
       cfg: {
         idx: true,
         itag: false,

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FolderIcon, UploadIcon, LogOutIcon, SearchIcon, GridIcon, ListIcon, RefreshCwIcon, FolderPlusIcon } from "lucide-react"
 import { FileList } from "@/components/file-list"
+import { FileGrid } from "@/components/file-grid"
 import { FileUpload } from "@/components/file-upload"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import type { CopyPartyResponse, FileItem, DirItem } from "@/types/copyparty"
@@ -215,6 +216,64 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
     }
   }
 
+  const handleRename = async (item: FileItem | DirItem, newBaseName: string) => {
+    if (isDemo) {
+      alert("Demo mode: rename is disabled.")
+      return
+    }
+
+    const safeName = newBaseName.trim()
+    if (!safeName) return
+
+    // Detect dir by trailing slash in href
+    const isDir = item.href.endsWith("/")
+
+    // Preserve extension for files; ensure trailing slash for dirs
+    let newHref = safeName
+    if (!isDir) {
+      const ext = (item as FileItem).ext
+      if (ext) {
+        // Avoid double dots if user typed it
+        if (safeName.toLowerCase().endsWith(`.${ext.toLowerCase()}`)) {
+          newHref = safeName
+        } else {
+          newHref = `${safeName}.${ext}`
+        }
+      }
+    } else {
+      // remove any trailing slashes from input, ensure one trailing slash
+      newHref = safeName.replace(/\/+$/, "") + "/"
+    }
+
+    try {
+      const params = new URLSearchParams({ op: "move", serverUrl, path: `${currentPath}${item.href}`, dest: `${currentPath}${newHref}` })
+      const response = await fetch(`/api/action?${params.toString()}`, {
+        method: "POST",
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) throw new Error("Authentication failed")
+        if (response.status === 403) throw new Error("Access denied")
+        throw new Error("Failed to rename")
+      }
+
+      handleRefresh()
+    } catch (err: unknown) {
+      const msg =
+        (err as {message?: string})?.message === "Authentication failed"
+          ? "Authentication failed. Please log in again."
+          : (err as {message?: string})?.message === "Access denied"
+            ? "Access denied. Your account lacks permissions."
+            : "Failed to rename. Please try again."
+      setError(msg)
+      if ((err as {message?: string})?.message === "Authentication failed") {
+        onLogout()
+      }
+      console.error(err)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -307,16 +366,29 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
           {isLoading && <div className="text-sm text-muted-foreground">Loading directory...</div>}
           {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
           {data && (
-            <FileList
-              dirs={data.dirs.filter((d) => d.href.toLowerCase().includes(searchQuery.toLowerCase()))}
-              files={data.files.filter((f) => f.href.toLowerCase().includes(searchQuery.toLowerCase()))}
-              viewMode={viewMode}
-              onNavigate={(href) => handleNavigate(href)}
-              onDownload={handleDownload}
-              onDelete={hasDeletePermission ? handleDelete : undefined}
-              currentPath={currentPath}
-              serverUrl={serverUrl}
-            />
+            viewMode === "grid" ? (
+              <FileGrid
+                dirs={data.dirs.filter((d) => d.href.toLowerCase().includes(searchQuery.toLowerCase()))}
+                files={data.files.filter((f) => f.href.toLowerCase().includes(searchQuery.toLowerCase()))}
+                onNavigate={(href: string) => handleNavigate(href)}
+                onDownload={handleDownload}
+                onDelete={hasDeletePermission ? handleDelete : undefined}
+                onRename={hasWritePermission ? handleRename : undefined}
+                currentPath={currentPath}
+                serverUrl={serverUrl}
+              />
+            ) : (
+              <FileList
+                dirs={data.dirs.filter((d) => d.href.toLowerCase().includes(searchQuery.toLowerCase()))}
+                files={data.files.filter((f) => f.href.toLowerCase().includes(searchQuery.toLowerCase()))}
+                onNavigate={(href: string) => handleNavigate(href)}
+                onDownload={handleDownload}
+                onDelete={hasDeletePermission ? handleDelete : undefined}
+                onRename={hasWritePermission ? handleRename : undefined}
+                currentPath={currentPath}
+                serverUrl={serverUrl}
+              />
+            )
           )}
         </div>
 

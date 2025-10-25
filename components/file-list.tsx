@@ -11,16 +11,17 @@ import {
   FileVideoIcon,
   FileAudioIcon,
   FileArchiveIcon,
+  PencilIcon,
 } from "lucide-react"
 import type { FileItem, DirItem } from "@/types/copyparty"
 
 interface FileListProps {
   dirs: DirItem[]
   files: FileItem[]
-  viewMode: "grid" | "list"
   onNavigate: (path: string) => void
   onDownload: (file: FileItem) => void
   onDelete?: (item: FileItem | DirItem) => void
+  onRename?: (item: FileItem | DirItem, newBaseName: string) => void
   currentPath: string
   serverUrl: string
 }
@@ -52,7 +53,7 @@ function getThumbUrl(serverUrl: string, currentPath: string, file: FileItem) {
   return `/api/action?${params.toString()}`
 }
 
-export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDelete, currentPath, serverUrl }: FileListProps) {
+export function FileList({ dirs, files, onNavigate, onDownload, onDelete, onRename, currentPath, serverUrl }: FileListProps) {
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     const units = ["KB", "MB", "GB", "TB"]
@@ -75,20 +76,6 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
     })
   }
 
-  const getFileIcon = (ext: string) => {
-    const videoExts = ["mp4", "webm", "mov", "avi", "mkv"]
-    const audioExts = ["mp3", "wav", "ogg", "flac", "m4a"]
-    const archiveExts = ["zip", "rar", "7z", "tar", "gz"]
-    const textExts = ["txt", "md", "json", "xml", "csv"]
-
-    if (isImageExt(ext)) return <ImageIcon className="h-8 w-8" />
-    if (videoExts.includes(ext.toLowerCase())) return <FileVideoIcon className="h-8 w-8" />
-    if (audioExts.includes(ext.toLowerCase())) return <FileAudioIcon className="h-8 w-8" />
-    if (archiveExts.includes(ext.toLowerCase())) return <FileArchiveIcon className="h-8 w-8" />
-    if (textExts.includes(ext.toLowerCase())) return <FileTextIcon className="h-8 w-8" />
-    return <FileIcon className="h-8 w-8" />
-  }
-
   const renderThumbOrIcon = (file: FileItem) => {
     if (isImageExt(file.ext)) {
       const url = getThumbUrl(serverUrl, currentPath, file)
@@ -105,70 +92,7 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
     }
     return (
       <div className="h-16 w-16 flex items-center justify-center rounded-md border border-border/50 bg-muted/20">
-        <div className="text-muted-foreground">{getFileIcon(file.ext)}</div>
-      </div>
-    )
-  }
-
-  if (viewMode === "grid") {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-        {dirs.map((dir) => (
-          // Use a div for the clickable card to avoid nested <button> inside <Button>
-          <div
-            key={dir.href}
-            role="button"
-            tabIndex={0}
-            onClick={() => onNavigate(currentPath + dir.href)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                onNavigate(currentPath + dir.href)
-              }
-            }}
-            className="group relative flex flex-col items-center p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer"
-          >
-            <FolderIcon className="h-10 w-10 sm:h-12 sm:w-12 text-primary mb-2" />
-            <span className="text-xs sm:text-sm text-center text-foreground line-clamp-2 break-all">
-              {decodeURIComponent(dir.href.replace(/\/$/, ""))}
-            </span>
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(dir)
-                }}
-              >
-                <TrashIcon className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-        ))}
-        {files.map((file) => (
-          <div
-            key={file.href}
-            className="group relative flex flex-col items-center p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-accent-foreground/20 transition-colors"
-          >
-            <div className="mb-2">{renderThumbOrIcon(file)}</div>
-            <span className="text-xs sm:text-sm text-center text-foreground line-clamp-2 break-all mb-1">
-              {decodeURIComponent(file.href)}
-            </span>
-            <span className="text-xs text-muted-foreground">{formatSize(file.sz)}</span>
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDownload(file)}>
-                <DownloadIcon className="h-3 w-3" />
-              </Button>
-              {onDelete && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(file)}>
-                  <TrashIcon className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        ))}
+        <div className="text-muted-foreground"><FileIcon className="h-8 w-8" /></div>
       </div>
     )
   }
@@ -205,9 +129,24 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
                   </div>
                 </td>
                 <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(dir.sz)}</td>
-                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(dir.ts)}</td>
+                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{new Date(dir.ts * 1000).toLocaleString()}</td>
                 <td className="px-3 sm:px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
+                    {onRename && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const currentName = decodeURIComponent(dir.href.replace(/\/$/, ""))
+                          const newName = prompt("Rename folder", currentName)
+                          if (newName && newName.trim()) onRename(dir, newName.trim())
+                        }}
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Button>
+                    )}
                     {onDelete && (
                       <Button
                         variant="ghost"
@@ -234,12 +173,27 @@ export function FileList({ dirs, files, viewMode, onNavigate, onDownload, onDele
                   </div>
                 </td>
                 <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">{formatSize(file.sz)}</td>
-                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(file.ts)}</td>
+                <td className="px-3 sm:px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">{new Date(file.ts * 1000).toLocaleString()}</td>
                 <td className="px-3 sm:px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDownload(file)}>
                       <DownloadIcon className="h-4 w-4" />
                     </Button>
+                    {onRename && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          const name = decodeURIComponent(file.href)
+                          const baseName = name.replace(/\.[^/.]+$/, "")
+                          const newName = prompt("Rename file", baseName)
+                          if (newName && newName.trim()) onRename(file, newName.trim())
+                        }}
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Button>
+                    )}
                     {onDelete && (
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(file)}>
                         <TrashIcon className="h-4 w-4" />

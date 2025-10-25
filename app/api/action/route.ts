@@ -155,6 +155,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, response: text }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } })
   }
 
+  // Move/Rename
+  if (op === "move" || op === "copy") {
+    const serverUrl = searchParams.get("serverUrl")
+    const path = searchParams.get("path") || "/"
+    const dest = searchParams.get("dest") || ""
+    const pw = getDecryptedPw(req)
+
+    if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
+    if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } })
+    if (!dest) return NextResponse.json({ error: "Missing dest" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
+
+    // Upstream expects POST with ?move=/new/path or ?copy=/new/path on the source URL
+    const actionParam = op === "move" ? "move" : "copy"
+    const upstreamUrl = appendPwToUrl(`${serverUrl}${path}?${actionParam}=${encodeURIComponent(dest)}`, pw)
+    const upstreamResp = await fetch(upstreamUrl, { method: "POST", cache: "no-store" })
+
+    if (!upstreamResp.ok) {
+      return NextResponse.json({ error: upstreamResp.statusText }, { status: upstreamResp.status, headers: { "Cache-Control": "no-store, max-age=0" } })
+    }
+
+    const text = await upstreamResp.text()
+    return NextResponse.json({ ok: true, response: text }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } })
+  }
+
   return NextResponse.json({ error: "Unsupported POST operation" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
 }
 

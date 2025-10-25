@@ -29,6 +29,11 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
 
   const isDemo = serverUrl.startsWith("demo://")
 
+  // Detect active work: uploading or waiting for listing to update
+  const hasUploading = uploadFiles.some((f) => f.status === "uploading")
+  const hasFinalizing = uploadFiles.some((f) => f.status === "success" && !!f.error)
+  const hasActive = hasUploading || hasFinalizing
+
   const handleFileSelect = (files: FileList | null) => {
     if (!files || isDemo) return
 
@@ -43,10 +48,10 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
 
   const waitUntilListed = async (filename: string): Promise<boolean> => {
     // Poll the listing for a short time to confirm the uploaded file appears
-    const end = Date.now() + 5000
+    const end = Date.now() + 8000
     while (Date.now() < end) {
       try {
-        const params = new URLSearchParams({ op: "list", serverUrl, path: currentPath })
+        const params = new URLSearchParams({ op: "ls", serverUrl, path: currentPath })
         params.set("_", Date.now().toString())
         const resp = await fetch(`/api/action?${params.toString()}`, { cache: "no-store" })
         if (resp.ok) {
@@ -90,7 +95,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             // Upload finished network-wise; wait until file appears in listing
             const ok = await waitUntilListed(file.name)
             setUploadFiles((prev) =>
-              prev.map((f, i) => (i === index ? { ...f, status: ok ? ("success" as const) : ("error" as const), progress: 100, error: ok ? undefined : "Uploaded but not listed yet" } : f)),
+              prev.map((f, i) => (i === index ? { ...f, status: ok ? ("success" as const) : ("success" as const), progress: 100, error: ok ? undefined : "Uploaded; listing may take a moment to update" } : f)),
             )
             resolve()
           } else {
@@ -167,7 +172,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             <UploadIcon className="h-5 w-5" /> Upload Files
           </CardTitle>
           <CardAction>
-            <Button variant="ghost" size="icon" aria-label="Close upload" onClick={onClose}>
+            <Button variant="ghost" size="icon" aria-label="Close upload" onClick={onClose} disabled={hasActive}>
               <XIcon className="h-4 w-4" />
             </Button>
           </CardAction>
@@ -177,6 +182,12 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             <div className="mb-3 flex items-center gap-2 rounded-md bg-yellow-100 text-yellow-900 px-3 py-2 text-xs sm:text-sm border border-yellow-200">
               <InfoIcon className="h-4 w-4" />
               Demo mode: uploads are disabled.
+            </div>
+          )}
+          {!isDemo && hasActive && (
+            <div className="mb-3 flex items-center gap-2 rounded-md bg-yellow-100 text-yellow-900 px-3 py-2 text-xs sm:text-sm border border-yellow-200">
+              <InfoIcon className="h-4 w-4" />
+              Uploads are still processing. Please don’t close this window until they finish.
             </div>
           )}
           <div
@@ -219,6 +230,12 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
                   </div>
                   <div className="mt-3">
                     <Progress value={uf.progress} />
+                    {uf.status === "success" && uf.error && (
+                      <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                        <InfoIcon className="h-3 w-3" />
+                        <span>{uf.error}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -232,7 +249,7 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
           )}
 
           <div className="mt-6 flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={hasActive}>
               Close
             </Button>
           </div>

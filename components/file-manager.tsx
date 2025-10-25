@@ -222,10 +222,6 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
               </div>
               <h1 className="text-lg sm:text-xl font-semibold">Cool CopyParty</h1>
             </div>
-            <Button variant="default" onClick={() => setShowUpload(true)}
-                  className="cursor-pointer rounded-full gap-2 w-12 h-12 sm:w-14 sm:h-14 fixed right-4 sm:right-10 bottom-4 sm:bottom-8 shadow-md">
-                <UploadIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-              </Button>
             <div className="flex items-center gap-2 sm:gap-3">
               <Button variant="outline" onClick={handleRefresh} className="gap-2">
                 <RefreshCwIcon className="h-4 w-4" />
@@ -238,10 +234,16 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
             </div>
           </div>
         </div>
+
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 safe-px">
+        <Button variant="default" onClick={() => setShowUpload(true)}
+            className="cursor-pointer rounded-full gap-2 w-14 h-14 absolute 
+            right-10 bottom-10 shadow-md">
+          <UploadIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+        </Button>
         {/* Breadcrumbs and Actions */}
         <div className="mb-6 space-y-4">
           <Breadcrumbs path={currentPath} onNavigate={handleNavigate} />

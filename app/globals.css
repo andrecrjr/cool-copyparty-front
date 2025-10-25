@@ -126,7 +126,7 @@
 /* Responsive utilities and fixes */
 @layer utilities {
   .container {
-    @apply w-full max-w-screen-xl mx-auto;
+    @apply w-[90%] max-w-screen-xl mx-auto;
   }
   .safe-px {
     padding-left: env(safe-area-inset-left);

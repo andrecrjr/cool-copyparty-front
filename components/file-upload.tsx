@@ -35,7 +35,11 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
   const hasActive = hasUploading || hasFinalizing
 
   const handleFileSelect = (files: FileList | null) => {
-    if (!files || isDemo) return
+    if (!files) return
+    if (isDemo) {
+      alert("Demo mode: uploads are disabled.")
+      return
+    }
 
     const newFiles: UploadFile[] = Array.from(files).map((file) => ({
       file,
@@ -200,7 +204,10 @@ export function FileUpload({ serverUrl, currentPath, onUploadComplete, onClose }
             onDrop={(e) => {
               e.preventDefault()
               setIsDragging(false)
-              if (isDemo) return
+              if (isDemo) {
+                alert("Demo mode: uploads are disabled.")
+                return
+              }
               handleFileSelect(e.dataTransfer.files)
             }}
           >

@@ -44,8 +44,8 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
   }
 
   const isDemo = serverUrl.startsWith("demo://")
-  const hasWritePermission = !isDemo && (data?.perms.includes("write") || false)
-  const hasDeletePermission = !isDemo && (data?.perms.includes("delete") || false)
+  const hasWritePermission = data?.perms.includes("write") || false
+  const hasDeletePermission = data?.perms.includes("delete") || false
 
   const fetchDirectory = async (path: string) => {
     setIsLoading(true)
@@ -59,7 +59,7 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
         taglist: [],
         srvinf: "demo",
         acct: "demo",
-        perms: ["read"],
+        perms: ["read"], // Only read permissions in demo mode
         cfg: {
           idx: true,
           itag: false,
@@ -312,9 +312,16 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 safe-px">
-        <Button variant="default" onClick={() => setShowUpload(true)}
-            className="cursor-pointer rounded-full gap-2 w-14 h-14 absolute 
-            right-10 bottom-10 shadow-md">
+        <Button variant="default" onClick={() => {
+            if (isDemo) {
+              alert("Demo mode: uploads are disabled.");
+              return;
+            }
+            setShowUpload(true);
+          }}
+            className="cursor-pointer rounded-full gap-2 w-14 h-14 absolute
+            right-10 bottom-10 shadow-md"
+            disabled={isDemo}>
           <UploadIcon className="h-5 w-5 sm:h-6 sm:w-6" />
         </Button>
         {/* Breadcrumbs and Actions */}
@@ -351,7 +358,7 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
             </div>
           </div>
 
-          {hasWritePermission && (
+          {(hasWritePermission && !isDemo) && (
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Input
@@ -362,6 +369,24 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={handleMkdir} className="gap-2" disabled={!mkdirName.trim()}>
+                  <FolderPlusIcon className="h-4 w-4" />
+                  Create folder
+                </Button>
+              </div>
+            </div>
+          )}
+          {isDemo && (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="New folder name"
+                  value=""
+                  onChange={() => {}}
+                  disabled
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => alert("Demo mode: creating folders is disabled.")} className="gap-2" disabled>
                   <FolderPlusIcon className="h-4 w-4" />
                   Create folder
                 </Button>
@@ -381,8 +406,8 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
                 files={data.files.filter((f) => f.href.toLowerCase().includes(searchQuery.toLowerCase()))}
                 onNavigate={(href: string) => handleNavigate(href)}
                 onDownload={handleDownload}
-                onDelete={hasDeletePermission ? handleDelete : undefined}
-                onRename={hasWritePermission ? handleRename : undefined}
+                onDelete={hasDeletePermission && !isDemo ? handleDelete : undefined}
+                onRename={hasWritePermission && !isDemo ? handleRename : undefined}
                 currentPath={currentPath}
                 serverUrl={serverUrl}
               />
@@ -392,8 +417,8 @@ export function FileManager({ serverUrl, onLogout, initialData }: FileManagerPro
                 files={data.files.filter((f) => f.href.toLowerCase().includes(searchQuery.toLowerCase()))}
                 onNavigate={(href: string) => handleNavigate(href)}
                 onDownload={handleDownload}
-                onDelete={hasDeletePermission ? handleDelete : undefined}
-                onRename={hasWritePermission ? handleRename : undefined}
+                onDelete={hasDeletePermission && !isDemo ? handleDelete : undefined}
+                onRename={hasWritePermission && !isDemo ? handleRename : undefined}
                 currentPath={currentPath}
                 serverUrl={serverUrl}
               />

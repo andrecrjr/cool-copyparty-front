@@ -18,7 +18,7 @@ export default function DemoPage() {
     taglist: [],
     srvinf: "demo",
     acct: "demo",
-    perms: ["read", "write", "delete"],
+    perms: ["read"], // Only read permissions in demo mode
     cfg: {
       idx: true,
       itag: false,

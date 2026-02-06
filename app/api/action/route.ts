@@ -41,13 +41,22 @@ function getDecryptedPw(req: NextRequest): string | null {
   return decrypt(enc)
 }
 
+function isDemoMode(serverUrl: string | null): boolean {
+  return serverUrl?.startsWith("demo://") || false
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const op = searchParams.get("op") || "ls"
   const serverUrl = searchParams.get("serverUrl")
   const path = searchParams.get("path") || "/"
-  const pw = getDecryptedPw(req)
 
+  // Check for demo mode first
+  if (isDemoMode(serverUrl)) {
+    return NextResponse.json({ error: "Operation not allowed in demo mode" }, { status: 403, headers: { "Cache-Control": "no-store, max-age=0" } })
+  }
+
+  const pw = getDecryptedPw(req)
   if (!serverUrl) return NextResponse.json({ error: "Missing serverUrl" }, { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } })
   if (!pw) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store, max-age=0" } })
 
@@ -92,6 +101,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const op = searchParams.get("op") || "upload"
+  const serverUrl = searchParams.get("serverUrl")
+
+  // Check for demo mode first
+  if (isDemoMode(serverUrl)) {
+    // Block all operations in demo mode
+    return NextResponse.json({ error: "Operation not allowed in demo mode" }, { status: 403, headers: { "Cache-Control": "no-store, max-age=0" } })
+  }
 
   if (op === "login") {
     const body = await req.json()
@@ -185,6 +201,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const op = searchParams.get("op") || "delete"
+  const serverUrl = searchParams.get("serverUrl")
 
   if (op === "logout") {
     const res = NextResponse.json({ ok: true }, { status: 200 })
@@ -201,7 +218,27 @@ export async function DELETE(req: NextRequest) {
     return res
   }
 
-  const serverUrl = searchParams.get("serverUrl")
+  // Check for demo mode
+  if (isDemoMode(serverUrl)) {
+    // Block all operations in demo mode except logout
+    if (op === "logout") {
+      const res = NextResponse.json({ ok: true }, { status: 200 })
+      res.cookies.set({
+        name: COOKIE_NAME,
+        value: "",
+        httpOnly: true,
+        secure: isSecure(req),
+        sameSite: "lax",
+        expires: new Date(0),
+        path: "/",
+      })
+      res.headers.set("Cache-Control", "no-store, max-age=0")
+      return res
+    } else {
+      return NextResponse.json({ error: "Operation not allowed in demo mode" }, { status: 403, headers: { "Cache-Control": "no-store, max-age=0" } })
+    }
+  }
+
   const path = searchParams.get("path") || "/"
   const pw = getDecryptedPw(req)
 

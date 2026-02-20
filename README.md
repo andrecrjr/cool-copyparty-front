@@ -2,6 +2,21 @@
 
 A clean Next.js frontend for interacting with a CopyParty file server. Log in using your server password, browse directories, upload and delete files, and quickly search — all proxied through a secure API route that never stores your password in the browser.
 
+## TL;DR - How to run
+
+```bash
+# Download the latest Standalone Build from Releases
+wget https://github.com/andrecrjr/cool-copyparty-front/releases/latest/download/copyparty-front.zip
+
+# Unzip it
+unzip copyparty-front.zip
+
+# Set environment variables (at minimum a strong cookie secret, and your desired port)
+COOKIE_SECRET=your-long-random-secret PORT=3925 NODE_ENV=production node server.js
+
+# Open http://localhost:3925 and log in with your CopyParty server URL and password.
+```
+
 ## Features
 - Connect to any reachable CopyParty server via URL
 - Directory listing with grid/list views and breadcrumb navigation
@@ -28,11 +43,11 @@ A clean Next.js frontend for interacting with a CopyParty file server. Log in us
 You can self-host in two ways: using a prebuilt ZIP from Releases (standalone build), or building locally.
 
 ### Option A: Download ZIP from GitHub Releases (standalone)
-1. Download the latest `build-front.zip` from the project’s Releases page.
-    - `wget https://github.com/andrecrjr/copyparty-front/releases/0.0.1/download/build-front.zip` or latest one check the Releases page.
+1. Download the latest `Standalone Build` from [Releases](https://github.com/andrecrjr/cool-copyparty-front/releases) page.
+    - `wget https://github.com/andrecrjr/cool-copyparty-front/releases/latest/download/copyparty-front.zip` or latest one check the Releases page.
     - Alternatively, build it yourself using the instructions below.
-2. Unzip it: `unzip build-front.zip` (this creates `build-front/`).
-3. Change into the standalone bundle: `cd build-front/.next/standalone`.
+2. Unzip it: `unzip copyparty-front.zip` (this creates `copyparty-front/`).
+3. Change into the standalone bundle: `cd copyparty-front/.next/standalone`.
 4. Set environment variables (at minimum a strong cookie secret, and your desired port):
    - macOS/Linux: `COOKIE_SECRET=your-long-random-secret PORT=3925 NODE_ENV=production node server.js`
    - Windows (PowerShell): `$env:COOKIE_SECRET="your-long-random-secret"; $env:PORT="3925"; $env:NODE_ENV="production"; node server.js`

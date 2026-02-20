@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/andrecrjr/cool-copyparty-front/compare/v1.0.0...v1.1.0) (2026-02-20)
+
+
+### Features
+
+* Add scan API route, modify login form, and update project dependencies. ([bb4fac2](https://github.com/andrecrjr/cool-copyparty-front/commit/bb4fac285e211e119714cb4dc358bbabdb29f187))
+
 # 1.0.0 (2026-02-20)
 
 

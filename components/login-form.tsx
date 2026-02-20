@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FolderIcon } from "lucide-react"
+import { FolderIcon, SearchIcon, ServerIcon, Loader2Icon, InfoIcon } from "lucide-react"
 
 interface LoginFormProps {
   onLogin: (serverUrl: string) => void
@@ -18,6 +18,36 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [isScanning, setIsScanning] = useState(false)
+  const [scannedServers, setScannedServers] = useState<string[]>([])
+  const [hasScanned, setHasScanned] = useState(false)
+
+  const isDemo = serverUrl.startsWith("demo://")
+
+  const handleScan = async () => {
+    if (isDemo) return
+    setIsScanning(true)
+    setError("")
+    try {
+      const res = await fetch(`/api/scan?serverUrl=${encodeURIComponent(serverUrl)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setScannedServers(data.targets || [])
+        setHasScanned(true)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || "Failed to scan local network.")
+      }
+    } catch (err) {
+      setError("Error scanning local network.")
+    } finally {
+      setIsScanning(false)
+    }
+  }
+
+  const handleSelectServer = (ip: string) => {
+    setServerUrl(`http://${ip}:3923`)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,18 +95,71 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="serverUrl" className="text-sm font-medium">
-                Server URL
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="serverUrl" className="text-sm font-medium">
+                  Server URL
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleScan}
+                  disabled={isScanning || isDemo}
+                  className="h-8 px-2 text-xs"
+                >
+                  {isScanning ? (
+                    <Loader2Icon className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <SearchIcon className="h-3 w-3 mr-1" />
+                  )}
+                  {isScanning ? "Scanning..." : "Scan Network"}
+                </Button>
+              </div>
               <Input
                 id="serverUrl"
                 type="text"
-                placeholder="https://127.0.0.1:3923"
+                placeholder="http://127.0.0.1:3923"
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
                 required
                 className="bg-background"
               />
+
+              {isDemo && (
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5 px-3 py-2 bg-yellow-500/10 text-yellow-500 rounded-md border border-yellow-500/20">
+                  <InfoIcon className="h-3.5 w-3.5" />
+                  <span>Network scanning is disabled for demo targets.</span>
+                </div>
+              )}
+
+              {hasScanned && !isDemo && (
+                <div className="mt-2 text-sm border rounded-md overflow-hidden bg-muted/30">
+                  <div className="bg-muted px-3 py-1.5 text-xs font-semibold flex items-center justify-between">
+                    <span>Local Servers Found</span>
+                    <span className="text-muted-foreground">{scannedServers.length}</span>
+                  </div>
+                  {scannedServers.length > 0 ? (
+                    <ul className="divide-y max-h-32 overflow-y-auto">
+                      {scannedServers.map((ip) => (
+                        <li key={ip}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectServer(ip)}
+                            className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center gap-2 text-xs transition-colors"
+                          >
+                            <ServerIcon className="h-3 w-3 text-primary" />
+                            {ip}:3923
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                      No CopyParty servers found on port 3923.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="space-y-2"></div>
             <div className="space-y-2">

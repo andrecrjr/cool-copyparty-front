@@ -11,8 +11,9 @@ wget https://github.com/andrecrjr/cool-copyparty-front/releases/latest/download/
 # Unzip it
 unzip copyparty-front.zip
 
+
 # Set environment variables (at minimum a strong cookie secret, and your desired port)
-COOKIE_SECRET=your-long-random-secret PORT=3925 NODE_ENV=production node server.js
+COOKIE_SECRET=$(openssl rand -base64 32) PORT=3925 NODE_ENV=production node copyparty-front/server.js
 
 # Open http://localhost:3925 and log in with your CopyParty server URL and password.
 ```
@@ -49,7 +50,7 @@ You can self-host in two ways: using a prebuilt ZIP from Releases (standalone bu
 2. Unzip it: `unzip copyparty-front.zip` (this creates `copyparty-front/`).
 3. Change into the standalone bundle: `cd copyparty-front/.next/standalone`.
 4. Set environment variables (at minimum a strong cookie secret, and your desired port):
-   - macOS/Linux: `COOKIE_SECRET=your-long-random-secret PORT=3925 NODE_ENV=production node server.js`
+   - macOS/Linux: `COOKIE_SECRET=$(openssl rand -base64 32) PORT=3925 NODE_ENV=production node server.js`
    - Windows (PowerShell): `$env:COOKIE_SECRET="your-long-random-secret"; $env:PORT="3925"; $env:NODE_ENV="production"; node server.js`
 5. Open `http://localhost:3925` and log in with your CopyParty server URL and password.
 
